@@ -42,9 +42,11 @@ describe('CellPhone Company Contract', async () => {
       .enrollCustomer(name)
       .send({ from: account_1, gas: 1000000 });
 
+    const etherValue = web3.utils.toWei('1', 'ether');
+
     await cellPhoneCompanyContracts.methods
-      .payMonthlyBill(web3.utils.toWei('20', 'ether'))
-      .send({ from: account_1, gas: 1000000, value: web3.utils.toWei('20', 'ether') });
+      .payMonthlyBill(etherValue)
+      .send({ from: account_1, gas: 1000000, value: etherValue });
 
     const customer = await cellPhoneCompanyContracts.methods
       .getEnrolledCustomerByAddress(account_1)
@@ -59,13 +61,15 @@ describe('CellPhone Company Contract', async () => {
       .enrollCustomer(name)
       .send({ from: account_1, gas: 1000000 });
 
-    await cellPhoneCompanyContracts.methods
-      .payMonthlyBill(0)
-      .send({ from: account_1, gas: 1000000 });
+    const etherValue = web3.utils.toWei('1', 'ether');
 
     await cellPhoneCompanyContracts.methods
-      .payMonthlyBill(0)
-      .send({ from: account_1, gas: 1000000 });
+      .payMonthlyBill(etherValue)
+      .send({ from: account_1, gas: 1000000, value: etherValue });
+
+    await cellPhoneCompanyContracts.methods
+      .payMonthlyBill(etherValue)
+      .send({ from: account_1, gas: 1000000, value: etherValue });
 
     await cellPhoneCompanyContracts.methods
       .exchangeCustomerPointsByProduct(0)
@@ -81,5 +85,42 @@ describe('CellPhone Company Contract', async () => {
 
     assert.strictEqual(customer[1], '0'); // customer should have 0 points
     assert.strictEqual(product[2], '1'); // product must have been purchased once
+  });
+  it('Customer should send eth to other customer', async () => {
+    const customerFirst = 'Maik Vinicius';
+    const customerSecond = 'Natalia Borges';
+
+    await cellPhoneCompanyContracts.methods
+      .enrollCustomer(customerFirst)
+      .send({ from: account_1, gas: 1000000 });
+
+    await cellPhoneCompanyContracts.methods
+      .enrollCustomer(customerSecond)
+      .send({ from: account_2, gas: 1000000 });
+
+    const etherValue = web3.utils.toWei('1', 'ether');
+
+    // Pay monthly bill to customer 1
+
+    await cellPhoneCompanyContracts.methods
+      .payMonthlyBill(etherValue)
+      .send({ from: account_1, gas: 1000000, value: etherValue });
+
+    const contractBalanceOld = await cellPhoneCompanyContracts.methods
+      .getContractBalance()
+      .call();
+
+    // With my amount of ether after pay monthly bill, I send it to customer 2
+
+    await cellPhoneCompanyContracts.methods
+      .transferToAccount(account_2, etherValue)
+      .send({ from: account_1, gas: 1000000 });
+
+    const contractBalance = await cellPhoneCompanyContracts.methods
+      .getContractBalance()
+      .call();
+
+    assert.strictEqual(contractBalanceOld, `${etherValue}`);
+    assert.strictEqual(contractBalance, '0');
   });
 });
