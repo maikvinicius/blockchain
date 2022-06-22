@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "first": "node ./scripts/firstCompile.js",
+    "test": "npx mocha"
   },
   "repository": {
     "type": "git",
